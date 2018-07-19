@@ -26,7 +26,7 @@ func CSV(chat storage.Chat, formatter Formatter, w io.Writer) {
 
 	writer.Write(header)
 
-	start := 1 << 31
+	start := (1 << 31) - 1
 	end := 0
 	for _, table := range tables {
 		for t := range table {
