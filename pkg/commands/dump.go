@@ -18,5 +18,5 @@ func (h *Dump) Do(data storage.Model, info storage.MessageInfo) (interface{}, er
 	if err != nil {
 		return "failed to dump database", err
 	}
-	return tb.Document{File: tb.FromDisk(h.DBPath), FileName: "db.json"}, nil
+	return &tb.Document{File: tb.FromDisk(h.DBPath), FileName: "db.json"}, nil
 }

@@ -12,6 +12,7 @@ import (
 
 var telegramToken = kingpin.Flag("token", "telegram bot token").Envar("TBTOKEN").Required().String()
 var dataStorePath = kingpin.Flag("store", "path to save and read store file").Default("/usr/share/store/store.json").String()
+var csvStoreDir = kingpin.Flag("csv", "dir to save and read csv files").Default("/usr/share/store/csv").String()
 var logLevel = kingpin.Flag("level", "logging level to use").Default("info").String()
 
 func main() {
@@ -43,12 +44,15 @@ func main() {
 	log.Infoln("loading plugins")
 	commandManager := commands.NewCommandManager(bot, dataStore)
 	commandManager.RegisterCommand("/help", new(commands.Help))
-	commandManager.RegisterCommand("/start", new(commands.Start))
+	commandManager.RegisterCommand("/start", new(commands.Help))
+	commandManager.RegisterCommand("/stats", new(commands.Help))
 	commandManager.RegisterCommand(tb.OnText, new(commands.OnText))
 	commandManager.RegisterCommand(tb.OnSticker, new(commands.OnSticker))
 	commandManager.RegisterCommand(tb.OnPhoto, new(commands.OnPhoto))
 	commandManager.RegisterCommand(tb.OnEdited, new(commands.OnEdited))
 	commandManager.RegisterCommand("/dump", &commands.Dump{DBPath: *dataStorePath})
+	commandManager.RegisterCommand("/month", &commands.Month{CSVDir: *csvStoreDir})
+	commandManager.RegisterCommand("/day", &commands.Day{CSVDir: *csvStoreDir})
 
 	log.Infoln("starting bot")
 	bot.Start()
