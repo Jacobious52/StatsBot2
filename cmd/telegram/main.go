@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/Jacobious52/StatsBot2/pkg/commands"
+	"github.com/Jacobious52/StatsBot2/pkg/format"
 	"github.com/Jacobious52/StatsBot2/pkg/storage"
 	log "github.com/sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
@@ -41,18 +42,100 @@ func main() {
 	dataStore.StartSync(nil)
 
 	// load plugins
-	log.Infoln("loading plugins")
 	commandManager := commands.NewCommandManager(bot, dataStore)
-	commandManager.RegisterCommand("/help", new(commands.Help))
-	commandManager.RegisterCommand("/start", new(commands.Help))
-	commandManager.RegisterCommand("/stats", new(commands.Help))
-	commandManager.RegisterCommand(tb.OnText, new(commands.OnText))
-	commandManager.RegisterCommand(tb.OnSticker, new(commands.OnSticker))
-	commandManager.RegisterCommand(tb.OnPhoto, new(commands.OnPhoto))
-	commandManager.RegisterCommand(tb.OnEdited, new(commands.OnEdited))
-	commandManager.RegisterCommand("/dump", &commands.Dump{DBPath: *dataStorePath})
-	commandManager.RegisterCommand("/month", &commands.Month{CSVDir: *csvStoreDir})
-	commandManager.RegisterCommand("/day", &commands.Day{CSVDir: *csvStoreDir})
+	log.Infoln("loading plugins")
+
+	// security risk: disable unless debugging
+	// commandManager.RegisterCommand("/dump", &commands.Dump{DBPath: *dataStorePath})
+
+	// help triggers
+	commandManager.RegisterCommand("/help", &commands.Help{Commander: commandManager})
+
+	// event triggers
+	commandManager.RegisterCommand(tb.OnText, &commands.Event{Type: "text"})
+	commandManager.RegisterCommand(tb.OnSticker, &commands.Event{Type: "sticker"})
+	commandManager.RegisterCommand(tb.OnPhoto, &commands.Event{Type: "photo"})
+	commandManager.RegisterCommand(tb.OnEdited, &commands.Event{Type: "edited"})
+
+	// stats triggers
+	commandManager.RegisterCommand("/month",
+		&commands.Stats{
+			Name:   "month",
+			CSVDir: *csvStoreDir,
+			Format: format.Monthly,
+		},
+	)
+	commandManager.RegisterCommand("/day",
+		&commands.Stats{
+			Name:   "day",
+			CSVDir: *csvStoreDir,
+			Format: format.Dayly,
+		},
+	)
+	commandManager.RegisterCommand("/month_edited",
+		&commands.Stats{
+			Name:   "month_edited",
+			CSVDir: *csvStoreDir,
+			Format: format.Monthly,
+			Filter: "edited",
+		},
+	)
+	commandManager.RegisterCommand("/day_edited",
+		&commands.Stats{
+			Name:   "day_edited",
+			CSVDir: *csvStoreDir,
+			Format: format.Dayly,
+			Filter: "edited",
+		},
+	)
+	commandManager.RegisterCommand("/month_sticker",
+		&commands.Stats{
+			Name:   "month_sticker",
+			CSVDir: *csvStoreDir,
+			Format: format.Monthly,
+			Filter: "sticker",
+		},
+	)
+	commandManager.RegisterCommand("/day_sticker",
+		&commands.Stats{
+			Name:   "day_sticker",
+			CSVDir: *csvStoreDir,
+			Format: format.Dayly,
+			Filter: "sticker",
+		},
+	)
+	commandManager.RegisterCommand("/month_photo",
+		&commands.Stats{
+			Name:   "month_photo",
+			CSVDir: *csvStoreDir,
+			Format: format.Monthly,
+			Filter: "photo",
+		},
+	)
+	commandManager.RegisterCommand("/day_photo",
+		&commands.Stats{
+			Name:   "day_photo",
+			CSVDir: *csvStoreDir,
+			Format: format.Dayly,
+			Filter: "photo",
+		},
+	)
+	commandManager.RegisterCommand("/month_text",
+		&commands.Stats{
+			Name:   "month_text",
+			CSVDir: *csvStoreDir,
+			Format: format.Monthly,
+			Filter: "text",
+		},
+	)
+	commandManager.RegisterCommand("/day_text",
+		&commands.Stats{
+			Name:   "day_text",
+			CSVDir: *csvStoreDir,
+			Format: format.Dayly,
+			Filter: "text",
+		},
+	)
 
 	log.Infoln("starting bot")
 	bot.Start()

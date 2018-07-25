@@ -1,9 +1,25 @@
 package commands
 
-import "github.com/Jacobious52/StatsBot2/pkg/storage"
+import (
+	"bytes"
+	"strings"
 
-type Help struct{}
+	"github.com/Jacobious52/StatsBot2/pkg/storage"
+)
+
+type Help struct {
+	Commander *CommandManager
+}
 
 func (h *Help) Do(storage.Model, storage.MessageInfo) (interface{}, error) {
-	return "yay statsbot2.. here are the new commands yea\n/month\n/day\n/dump\nyou just get csv or json.. cbf doing graphs. yay the end", nil
+	var buff bytes.Buffer
+	buff.WriteString("[Registered Commands]\n")
+	for command := range h.Commander.commands {
+		if strings.HasPrefix(command, "/") {
+			buff.WriteString(command)
+			buff.WriteString("\n")
+		}
+	}
+	buff.WriteString("\n")
+	return buff.String(), nil
 }

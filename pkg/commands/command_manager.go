@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"fmt"
+
 	"github.com/Jacobious52/StatsBot2/pkg/command"
 	"github.com/Jacobious52/StatsBot2/pkg/storage"
 	log "github.com/sirupsen/logrus"
@@ -37,11 +39,19 @@ func (p *CommandManager) RegisterCommand(name string, c command.Command) {
 			"time":    m.Time(),
 		})
 
+		userID := m.Sender.Username
+		if len(userID) == 0 {
+			userID = m.Sender.FirstName
+			if len(userID) == 0 {
+				userID = fmt.Sprint(m.Sender.ID)
+			}
+		}
+
 		logger.Debugln("locking store")
 		p.store.Lock()
 		response, err := c.Do(p.store.Data, storage.MessageInfo{
 			Chat:      storage.ChatKey(m.Chat.ID),
-			Sender:    storage.UserKey(m.Sender.Username),
+			Sender:    storage.UserKey(userID),
 			Timestamp: m.Time(),
 		})
 		p.store.Dirty = true
