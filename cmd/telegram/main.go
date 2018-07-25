@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/Jacobious52/StatsBot2/pkg/commands"
@@ -12,9 +13,9 @@ import (
 )
 
 var telegramToken = kingpin.Flag("token", "telegram bot token").Envar("TBTOKEN").Required().String()
-var dataStorePath = kingpin.Flag("store", "path to save and read store file").Default("/usr/share/store/store.json").String()
-var csvStoreDir = kingpin.Flag("csv", "dir to save and read csv files").Default("/usr/share/store/csv").String()
-var logLevel = kingpin.Flag("level", "logging level to use").Default("info").String()
+var dataStorePath = kingpin.Flag("db", "path to save and read store file").Default("/var/lib/statsbot/db.json").String()
+var csvStoreDir = kingpin.Flag("csv", "dir to save and read csv files").Default("/tmp").String()
+var logLevel = kingpin.Flag("log", "logging level to use").Default("info").String()
 
 func main() {
 	kingpin.Parse()
@@ -57,85 +58,46 @@ func main() {
 	commandManager.RegisterCommand(tb.OnPhoto, &commands.Event{Type: "photo"})
 	commandManager.RegisterCommand(tb.OnEdited, &commands.Event{Type: "edited"})
 
-	// stats triggers
-	commandManager.RegisterCommand("/month",
-		&commands.Stats{
-			Name:   "month",
-			CSVDir: *csvStoreDir,
-			Format: format.Monthly,
-		},
-	)
-	commandManager.RegisterCommand("/day",
-		&commands.Stats{
-			Name:   "day",
-			CSVDir: *csvStoreDir,
-			Format: format.Dayly,
-		},
-	)
-	commandManager.RegisterCommand("/month_edited",
-		&commands.Stats{
-			Name:   "month_edited",
-			CSVDir: *csvStoreDir,
-			Format: format.Monthly,
-			Filter: "edited",
-		},
-	)
-	commandManager.RegisterCommand("/day_edited",
-		&commands.Stats{
-			Name:   "day_edited",
-			CSVDir: *csvStoreDir,
-			Format: format.Dayly,
-			Filter: "edited",
-		},
-	)
-	commandManager.RegisterCommand("/month_sticker",
-		&commands.Stats{
-			Name:   "month_sticker",
-			CSVDir: *csvStoreDir,
-			Format: format.Monthly,
-			Filter: "sticker",
-		},
-	)
-	commandManager.RegisterCommand("/day_sticker",
-		&commands.Stats{
-			Name:   "day_sticker",
-			CSVDir: *csvStoreDir,
-			Format: format.Dayly,
-			Filter: "sticker",
-		},
-	)
-	commandManager.RegisterCommand("/month_photo",
-		&commands.Stats{
-			Name:   "month_photo",
-			CSVDir: *csvStoreDir,
-			Format: format.Monthly,
-			Filter: "photo",
-		},
-	)
-	commandManager.RegisterCommand("/day_photo",
-		&commands.Stats{
-			Name:   "day_photo",
-			CSVDir: *csvStoreDir,
-			Format: format.Dayly,
-			Filter: "photo",
-		},
-	)
-	commandManager.RegisterCommand("/month_text",
-		&commands.Stats{
-			Name:   "month_text",
-			CSVDir: *csvStoreDir,
-			Format: format.Monthly,
-			Filter: "text",
-		},
-	)
-	commandManager.RegisterCommand("/day_text",
-		&commands.Stats{
-			Name:   "day_text",
-			CSVDir: *csvStoreDir,
-			Format: format.Dayly,
-			Filter: "text",
-		},
-	)
+	// list of formmaters and filters to combine
+	formatters := map[string]format.Formatter{
+		"day":   format.Dayly,
+		"month": format.Monthly,
+		"hour":  format.Hourly,
+		"week":  format.Weekly,
+	}
+	filters := []storage.MessageKeyFilter{
+		"text",
+		"edited",
+		"photo",
+		"sticker",
+	}
+
+	// combine them all making commands
+	for formatterName, formatter := range formatters {
+		// add one formatter without a filter
+		commandManager.RegisterCommand(
+			fmt.Sprintf("/%s", formatterName),
+			&commands.Stats{
+				Name:   formatterName,
+				CSVDir: *csvStoreDir,
+				Format: formatter,
+			},
+		)
+
+		// add the formatters with all the filters
+		for _, filter := range filters {
+			key := fmt.Sprintf("%s_%s", formatterName, filter)
+			commandManager.RegisterCommand(
+				fmt.Sprintf("/%s", key),
+				&commands.Stats{
+					Name:   key,
+					CSVDir: *csvStoreDir,
+					Format: formatter,
+					Filter: filter,
+				},
+			)
+		}
+	}
 
 	log.Infoln("starting bot")
 	bot.Start()
