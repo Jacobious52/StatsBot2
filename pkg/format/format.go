@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/Jacobious52/StatsBot2/pkg/storage"
 	log "github.com/sirupsen/logrus"
@@ -11,9 +12,9 @@ import (
 
 type Table map[int]int
 
-type Formatter func(storage.Messages, storage.MessageKeyFilter) Table
+type Formatter func(storage.Messages, storage.MessageKeyFilter, *time.Location) Table
 
-func CSV(chat storage.Chat, timeFrame string, formatter Formatter, filter storage.MessageKeyFilter, w io.Writer) {
+func CSV(chat storage.Chat, timeFrame string, formatter Formatter, filter storage.MessageKeyFilter, location *time.Location, w io.Writer) {
 	writer := csv.NewWriter(w)
 	defer writer.Flush()
 
@@ -21,7 +22,7 @@ func CSV(chat storage.Chat, timeFrame string, formatter Formatter, filter storag
 	header := []string{timeFrame}
 	tables := make(map[storage.UserKey]Table)
 	for user, messages := range chat {
-		tables[user] = formatter(messages, filter)
+		tables[user] = formatter(messages, filter, location)
 		header = append(header, string(user))
 	}
 	writer.Write(header)

@@ -15,6 +15,7 @@ import (
 var telegramToken = kingpin.Flag("token", "telegram bot token").Envar("TBTOKEN").Required().String()
 var dataStorePath = kingpin.Flag("db", "path to save and read store file").Default("/var/lib/statsbot/db.json").String()
 var csvStoreDir = kingpin.Flag("csv", "dir to save and read csv files").Default("/tmp").String()
+var locationKey = kingpin.Flag("loc", "location for outputting csv").Required().String()
 var logLevel = kingpin.Flag("log", "logging level to use").Default("info").String()
 
 func main() {
@@ -72,15 +73,21 @@ func main() {
 		"sticker",
 	}
 
+	location, err := time.LoadLocation(*locationKey)
+	if err != nil {
+		log.Fatalln("could not load location:", err)
+	}
+
 	// combine them all making commands
 	for formatterName, formatter := range formatters {
 		// add one formatter without a filter
 		commandManager.RegisterCommand(
 			fmt.Sprintf("/%s", formatterName),
 			&commands.Stats{
-				Name:   formatterName,
-				CSVDir: *csvStoreDir,
-				Format: formatter,
+				Name:     formatterName,
+				CSVDir:   *csvStoreDir,
+				Format:   formatter,
+				Location: location,
 			},
 		)
 
@@ -90,10 +97,11 @@ func main() {
 			commandManager.RegisterCommand(
 				fmt.Sprintf("/%s", key),
 				&commands.Stats{
-					Name:   key,
-					CSVDir: *csvStoreDir,
-					Format: formatter,
-					Filter: filter,
+					Name:     key,
+					CSVDir:   *csvStoreDir,
+					Format:   formatter,
+					Filter:   filter,
+					Location: location,
 				},
 			)
 		}

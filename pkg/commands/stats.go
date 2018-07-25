@@ -12,10 +12,11 @@ import (
 )
 
 type Stats struct {
-	Name   string
-	CSVDir string
-	Format format.Formatter
-	Filter storage.MessageKeyFilter
+	Name     string
+	CSVDir   string
+	Format   format.Formatter
+	Filter   storage.MessageKeyFilter
+	Location *time.Location
 }
 
 func (m *Stats) Do(data storage.Model, info storage.MessageInfo) (interface{}, error) {
@@ -27,7 +28,7 @@ func (m *Stats) Do(data storage.Model, info storage.MessageInfo) (interface{}, e
 	}
 	defer file.Close()
 
-	format.CSV(data[info.Chat], m.Name, m.Format, m.Filter, file)
+	format.CSV(data[info.Chat], m.Name, m.Format, m.Filter, m.Location, file)
 
 	return &tb.Document{File: tb.FromDisk(filename), FileName: fmt.Sprint(m.Name, ".csv")}, nil
 }
